@@ -46,14 +46,6 @@ type SpinAppSpec struct {
 	// Number of replicas to run.
 	Replicas int32 `json:"replicas"`
 
-	// EnableAutoscaling indicates whether the app is allowed to autoscale. If
-	// true then the operator leaves the replica count of the underlying
-	// deployment to be managed by an external autoscaler (HPA/KEDA). Replicas
-	// cannot be defined if this is enabled. By default EnableAutoscaling is false.
-	//
-	// +kubebuilder:default:=false
-	EnableAutoscaling bool `json:"enableAutoscaling,omitempty"`
-
 	// RuntimeConfig defines configuration to be applied at runtime for this app.
 	RuntimeConfig RuntimeConfig `json:"runtimeConfig,omitempty"`
 
@@ -96,12 +88,16 @@ type SpinAppStatus struct {
 
 	// Represents the current number of active replicas on the application deployment.
 	ReadyReplicas int32 `json:"readyReplicas,omitempty"`
+
+	// Selector is the label selector for the underlying deployment.
+	Selector string `json:"selector,omitempty"`
 }
 
 // SpinApp is the Schema for the spinapps API
 //
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.readyReplicas,selectorpath=.status.selector
 // +kubebuilder:printcolumn:JSONPath=".status.readyReplicas",name=Ready Replicas,type=integer
 // +kubebuilder:printcolumn:JSONPath=".spec.executor",name=Executor,type=string
 type SpinApp struct {

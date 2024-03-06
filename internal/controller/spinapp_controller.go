@@ -203,6 +203,13 @@ func (r *SpinAppReconciler) updateStatus(ctx context.Context, app *spinv1.SpinAp
 			}
 		}
 		app.Status.ReadyReplicas = deployment.Status.ReadyReplicas
+
+		selector, err := metav1.LabelSelectorAsSelector(deployment.Spec.Selector)
+		if err != nil {
+			log.Error(err, "Unable to parse deployment selector")
+			return err
+		}
+		app.Status.Selector = selector.String()
 	}
 
 	if err := r.Client.Status().Update(ctx, app); err != nil {
@@ -290,14 +297,7 @@ func (r *SpinAppReconciler) deleteDeployment(ctx context.Context, app *spinv1.Sp
 
 // constructDeployment builds an appsv1.Deployment based on the configuration of a SpinApp.
 func constructDeployment(ctx context.Context, app *spinv1.SpinApp, config *spinv1.ExecutorDeploymentConfig, scheme *runtime.Scheme) (*appsv1.Deployment, error) {
-	// TODO: Once we land admission webhooks write some validation to make
-	// replicas and enableAutoscaling mutually exclusive.
-	var replicas *int32
-	if app.Spec.EnableAutoscaling {
-		replicas = nil
-	} else {
-		replicas = ptr(app.Spec.Replicas)
-	}
+	replicas := ptr(app.Spec.Replicas)
 
 	volumes, volumeMounts, err := ConstructVolumeMountsForApp(ctx, app, "")
 	if err != nil {
